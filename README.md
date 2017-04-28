@@ -20,8 +20,7 @@ The plugin will appear in Window > Waterfall.
 
 ### License
 
-Copyright 2017 Toshi Omagari (@tosche_e).
-Based on sample codes by Rainer Erich Scheichelbauer (@mekkablue).
+Copyright 2017 Toshi Omagari(@tosche_e).
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
