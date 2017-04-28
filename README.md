@@ -6,7 +6,7 @@ After installation, it will add the menu item *Window > Waterfall*.
 You can set a keyboard shortcut in System Preferences.
 Massive thanks to [Mark Frömberg](https://github.com/Mark2Mark) for the help.
 
-![No, the God didn't say it, nor did he exi... nevermind.](WaterfallScreenshot.png.png "Waterfall Screenshot")
+![No, the God didn't say it, nor did he exi... nevermind.](WaterfallScreenshot.png "Waterfall Screenshot")
 
 ### Installation
 
