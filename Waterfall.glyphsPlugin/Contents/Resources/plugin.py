@@ -172,9 +172,7 @@ class WaterfallWindow(GeneralPlugin):
 	def loadPrefs(self):
 		try:
 			if Glyphs.defaults["com.Tosche.Waterfall.edit"] != None:
-				print self.w.edit.get()
 				self.w.edit.set(Glyphs.defaults["com.Tosche.Waterfall.edit"])
-				print self.w.edit.get()
 			R_f, G_f, B_f, A_f = Glyphs.defaults["com.Tosche.Waterfall.foreColour"]
 			self.w.foreColour.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(float(R_f), float(G_f), float(B_f), float(A_f)))
 			R_b, G_b, B_b, A_b = Glyphs.defaults["com.Tosche.Waterfall.backColour"]
