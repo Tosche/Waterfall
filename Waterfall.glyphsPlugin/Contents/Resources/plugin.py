@@ -98,11 +98,12 @@ class WaterfallView(NSView):
 		
 		try:
 			sSum = 0
+			upm = float(f.upm)
 			for i, s in enumerate(sizes):
 				sSum += s
 				transform = NSAffineTransform.transform()
-				transform.scaleBy_( s/1000.0 )
-				transform.translateXBy_yBy_(tab*1000.0/s, (h-lineSpace*(i+1)-sSum)*1000.0/s)
+				transform.scaleBy_( s/upm )
+				transform.translateXBy_yBy_(tab*upm/s, (h-lineSpace*(i+1)-sSum)*upm/s)
 				self.drawText(str(s), self.wrapper._foreColour, 10, h-lineSpace*(i+1)-sSum-2)
 				fullPath.transformUsingAffineTransform_( transform )
 				fullPath.fill()
