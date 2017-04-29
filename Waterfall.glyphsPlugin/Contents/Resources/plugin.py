@@ -108,8 +108,7 @@ class WaterfallView(NSView):
 				fullPath.fill()
 				transform.invert()
 				fullPath.transformUsingAffineTransform_( transform )
-		except Exception, e:
-			print e
+		except:
 			print traceback.format_exc()
 
 	def drawText(self, text, textColour, x, y):
@@ -125,9 +124,9 @@ class WaterfallView(NSView):
 class TheView(VanillaBaseObject):
 	nsGlyphPreviewClass = WaterfallView
 	def __init__(self, posSize):
-		self._glyphsList = []
-		self._foreColour = None
-		self._backColour = None
+		self._glyphsList = ["T", "h", "e", "space", "q", "u", "i", "c", "k", "space", "b", "r", "o", "w", "n", "space", "j", "u", "m", "p", "s", "space", "o", "v", "e", "r", "space", "t", "h", "e", "space", "l", "a", "z", "y", "space", "d", "o", "g", "period"]
+		self._foreColour = NSColor.blackColor()
+		self._backColour = NSColor.whiteColor()
 		self._instanceIndex = 0
 		self._setupView(self.nsGlyphPreviewClass, posSize)
 		self._nsObject.wrapper = self
@@ -157,8 +156,8 @@ class WaterfallWindow(GeneralPlugin):
 			insList = [i.name for i in Glyphs.font.instances]
 			insList.insert(0, 'Current Master')
 			self.w.edit = EditText( (spX, spY, -spX*3-clX*2, edY), text="The quick brown jumps over the lazy dog.", callback=self.uiChange)			
-			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=NSColor.blackColor(), callback=self.uiChange)
-			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=NSColor.whiteColor(), callback=self.uiChange)
+			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=NSColor.colorWithCalibratedRed_green_blue_alpha_( 0, 0, 0, 1 ), callback=self.uiChange)
+			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=NSColor.colorWithCalibratedRed_green_blue_alpha_( 1, 1, 1, 1 ), callback=self.uiChange)
 			self.w.instances = PopUpButton((spX, spY*2+edY, -spX, edY), insList, callback=self.changeGlyph )
 			self.w.preview = TheView((0, spX*3+edY*2, -0, -0))
 		
@@ -172,13 +171,15 @@ class WaterfallWindow(GeneralPlugin):
 
 	def loadPrefs(self):
 		try:
-			self.w.edit.set(Glyphs.defaults["com.Tosche.Waterfall.edit"])
+			if Glyphs.defaults["com.Tosche.Waterfall.edit"] != None:
+				print self.w.edit.get()
+				self.w.edit.set(Glyphs.defaults["com.Tosche.Waterfall.edit"])
+				print self.w.edit.get()
 			R_f, G_f, B_f, A_f = Glyphs.defaults["com.Tosche.Waterfall.foreColour"]
 			self.w.foreColour.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(float(R_f), float(G_f), float(B_f), float(A_f)))
 			R_b, G_b, B_b, A_b = Glyphs.defaults["com.Tosche.Waterfall.backColour"]
 			self.w.backColour.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(float(R_b), float(G_b), float(B_b), float(A_b)))
-		except Exception, e:
-			print e
+		except:
 			pass
 
 	def makeList(self, string):
