@@ -38,12 +38,15 @@ class WaterfallView(NSView):
 		h = NSHeight(self.frame())
 		gs = self.wrapper._glyphsList
 		insIndex = self.wrapper._instanceIndex
-		if insIndex == 0:
-			f = Glyphs.font
-			m = f.selectedFontMaster
-		else:
-			f = Glyphs.font.instances[insIndex-1].interpolatedFont
-			m = f.masters[0]
+		try:
+			if insIndex == 0:
+				f = Glyphs.font
+				m = f.selectedFontMaster
+			else:
+				f = Glyphs.font.instances[insIndex-1].interpolatedFont
+				m = f.masters[0]
+		except:
+			f, m = None, None
 		fullPath = NSBezierPath.alloc().init()
 		advance = 0
 		try:
