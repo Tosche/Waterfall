@@ -232,8 +232,14 @@ class WaterfallWindow(GeneralPlugin):
 
 	def changeGlyph(self, sender):
 		currentIndex = self.w.instances.get()
-		insList = [i.name for i in Glyphs.font.instances]
-		insList.insert(0, 'Current Master')
+		insList = ['Current Master']
+		for i in Glyphs.font.instances:
+			if i.customParameters['familyName']:
+				insList.append(i.customParameters['familyName']+i.name)
+			else:
+				insList.append(i.name)
+#		insList = [i.name for i in Glyphs.font.instances]
+#		insList.insert(0, 'Current Master')
 		if insList != self.w.instances.getItems():
 			self.w.instances.setItems(insList)
 			currentIndex = 0
