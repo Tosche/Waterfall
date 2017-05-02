@@ -157,8 +157,12 @@ class WaterfallWindow(GeneralPlugin):
 			self.w = FloatingWindow((self.windowWidth, self.windowWidth), "Waterfall",
 				autosaveName = "com.Tosche.Waterfall.mainwindow",
 				minSize=(self.windowWidth, self.windowWidth+20))
-			insList = [i.name for i in Glyphs.font.instances]
-			insList.insert(0, 'Current Master')
+			insList = ['Current Master']
+			for i in Glyphs.font.instances:
+				if i.customParameters['familyName']:
+					insList.append("%s %s" % (i.customParameters['familyName'], i.name))
+				else:
+					insList.append(i.name)
 			self.w.edit = EditText( (spX, spY, -spX*3-clX*2, edY), text="The quick brown jumps over the lazy dog.", callback=self.uiChange)			
 			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=NSColor.colorWithCalibratedRed_green_blue_alpha_( 0, 0, 0, 1 ), callback=self.uiChange)
 			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=NSColor.colorWithCalibratedRed_green_blue_alpha_( 1, 1, 1, 1 ), callback=self.uiChange)
@@ -235,7 +239,7 @@ class WaterfallWindow(GeneralPlugin):
 		insList = ['Current Master']
 		for i in Glyphs.font.instances:
 			if i.customParameters['familyName']:
-				insList.append(i.customParameters['familyName']+i.name)
+				insList.append("%s %s" % (i.customParameters['familyName'], i.name))
 			else:
 				insList.append(i.name)
 #		insList = [i.name for i in Glyphs.font.instances]
