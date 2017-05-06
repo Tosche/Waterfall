@@ -242,8 +242,6 @@ class WaterfallWindow(GeneralPlugin):
 				insList.append("%s %s" % (i.customParameters['familyName'], i.name))
 			else:
 				insList.append(i.name)
-#		insList = [i.name for i in Glyphs.font.instances]
-#		insList.insert(0, 'Current Master')
 		if insList != self.w.instances.getItems():
 			self.w.instances.setItems(insList)
 			currentIndex = 0
