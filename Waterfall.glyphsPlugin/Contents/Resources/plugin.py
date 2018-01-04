@@ -14,9 +14,10 @@
 
 #https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/CocoaViewsGuide/SubclassingNSView/SubclassingNSView.html
 
+from GlyphsApp import *
 from GlyphsApp.plugins import *
 from vanilla import *
-from AppKit import NSAffineTransform, NSRectFill, NSView, NSNoBorder, NSColor, NSBezierPath
+from AppKit import NSAffineTransform, NSRectFill, NSView, NSNoBorder, NSColor, NSBezierPath, NSMutableParagraphStyle, NSParagraphStyleAttributeName
 from Foundation import NSWidth, NSHeight, NSMidX, NSMidY
 import traceback
 import re
