@@ -21,11 +21,11 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.1</string>
 	<key>UpdateFeedURL</key>
-	<string>https://raw.githubusercontent.com/Tosche/Waterfall/master/Waterfall.glyphsPlugin/Contents/Info.plist</string>
+	<string></string>
 	<key>productPageURL</key>
-	<string>https://github.com/Tosche/Waterfall</string>	
+	<string></string>	
 	<key>productReleaseNotes</key>
-	<string>First Release version. Thanks Mark2Mark for the help!</string>
+	<string>First Release version</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright, Toshi Omagari, 2017</string>
 	<key>NSPrincipalClass</key>
