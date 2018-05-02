@@ -165,7 +165,7 @@ class TheView(VanillaBaseObject):
 
 class WaterfallWindow(GeneralPlugin):
 	def settings(self):
-		self.name = "Waterfall"
+		self.name = Glyphs.localize({'en': u'Waterfall', 'de': u'Wasserfall', 'ko': u'폭포형태로 보기'})
 
 	## creates Vanilla Window
 	#------------------------
@@ -182,7 +182,7 @@ class WaterfallWindow(GeneralPlugin):
 			self.currentDocument = Glyphs.currentDocument
 			self.thisfont = Glyphs.font
 			# self.thisfont = GlyphsApp.currentFont()
-			self.w = FloatingWindow((self.windowWidth, self.windowWidth), "Waterfall",
+			self.w = FloatingWindow((self.windowWidth, self.windowWidth), self.name,
 				autosaveName = "com.Tosche.Waterfall.mainwindow",
 				minSize=(self.windowWidth, self.windowWidth+20))
 			self.w.bind("close", self.windowClosed)
