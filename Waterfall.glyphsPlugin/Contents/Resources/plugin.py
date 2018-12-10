@@ -28,6 +28,21 @@ emoji_variation_selector = re.compile(u'[\ufe00-\ufe0f]', re.UNICODE)
 
 
 class WaterfallView(NSView):
+	
+	def glyphForName(self, name, font):
+		if len(name) == 1:
+			glyph_unicode = "%.4X" % ord(name)
+		else:
+			glyph_unicode = name.encode('unicode-escape')
+		glyph = font.glyphs[glyph_unicode]
+		if glyph is None:
+			if len(glyph_unicode) == 10:
+				glyph_unicode = glyph_unicode[5:].upper()
+			glyph = f.glyphForUnicode_(glyph_unicode)
+		if glyph is None:
+			glyph = font.glyphs['.notdef']
+		return glyph
+		
 	def drawRect_(self, rect):
 		self.wrapper._backColour.set()
 		NSBezierPath.fillRect_(rect)
@@ -36,43 +51,27 @@ class WaterfallView(NSView):
 		tab = 30
 		w = NSWidth(self.frame())
 		h = NSHeight(self.frame())
-		gs = self.wrapper._glyphsList
+		glyphNames = self.wrapper._glyphsList
 		insIndex = self.wrapper._instanceIndex
 		if insIndex == 0:
-			f = Glyphs.font
-			m = f.selectedFontMaster
+			font = Glyphs.font
+			m = font.selectedFontMaster
 		else:
 			instance = Glyphs.font.instances[insIndex-1]
-			f = self.wrapper.instances.get(instance.name)
-			if f is None:
-				f = instance.interpolatedFont
-				self.wrapper.instances[instance.name] = f
-			m = f.masters[0]
+			font = self.wrapper.instances.get(instance.name)
+			if font is None:
+				font = instance.interpolatedFont
+				self.wrapper.instances[instance.name] = font
+			m = font.masters[0]
 		fullPath = NSBezierPath.alloc().init()
 		advance = 0
 		self.wrapper._foreColour.set()
 		
 		try:
-			for i, g in enumerate(gs):
-				if len(g) == 1:
-					glyph_unicode = hex(ord(g)).upper().replace('0X', '').zfill(4)
-				else:
-					glyph_unicode = g.encode('unicode-escape')
-				glyph = f.glyphs[glyph_unicode]
-				if glyph is None:
-					if len(glyph_unicode) == 10:
-						glyph_unicode = glyph_unicode[5:].upper()
-					glyph = self.wrapper.unicode_dict.get(glyph_unicode)
-				if glyph is None:
-					glyph = f.glyphs['.notdef']
-
+			for i, glyphName in enumerate(glyphNames):
+				
+				glyph = self.glyphForName(glyphName, font)
 				if glyph:
-					gl = glyph.layers[m.id]
-					if not gl:
-						try:
-							gl = f.glyphs[glyph_unicode].layers[m.id]
-						except AttributeError:
-							continue
 					fullPath.appendBezierPath_(gl.completeBezierPath)
 					kernValue = 0
 					# kerning check
@@ -118,7 +117,7 @@ class WaterfallView(NSView):
 		
 		try:
 			sSum = 0
-			upm = float(f.upm)
+			upm = float(font.upm)
 			for i, s in enumerate(sizes):
 				sSum += s + s/4
 				transform = NSAffineTransform.transform()
@@ -193,7 +192,6 @@ class WaterfallWindow(GeneralPlugin):
 			self.w.instancePopup = PopUpButton((spX, spY*2+edY, -spX, edY), insList, callback=self.changeInstance)
 			self.w.preview = TheView((0, spX*3+edY*2, -0, -0))
 			self.w.preview.instances = {}
-			self.w.preview.unicode_dict = {}
 			self.loadPrefs()
 			self.w.open()
 			self.uiChange(None)
@@ -260,11 +258,6 @@ class WaterfallWindow(GeneralPlugin):
 			Glyphs.showMacroWindow()
 
 	def textChanged(self, sender):
-		for g in Glyphs.font.glyphs:
-			if g.unicode:
-				self.w.preview.unicode_dict[str(g.unicode)] = g
-
-		self.w.preview._glyphsList = ''
 		self.w.preview._glyphsList = self.makeList(self.w.edit.get())
 		self.w.preview.redraw()
 
