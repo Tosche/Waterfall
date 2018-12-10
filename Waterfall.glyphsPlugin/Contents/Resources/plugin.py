@@ -72,8 +72,9 @@ class WaterfallView(NSView):
 				
 				glyph = self.glyphForName(glyphName, font)
 				if glyph:
-					fullPath.appendBezierPath_(gl.completeBezierPath)
 					layer = glyph.layers[m.id]
+					
+					layerPath = layer.completeBezierPath
 					kernValue = 0
 					# kerning check
 					if i+1 < len(glyphNames):
@@ -87,11 +88,11 @@ class WaterfallView(NSView):
 									kernValue = 0
 					
 					transform = NSAffineTransform.transform()
-					transform.translateXBy_yBy_(-gl.width-kernValue, 0)
-					fullPath.transformUsingAffineTransform_( transform )
-			transform = NSAffineTransform.transform()
-			transform.translateXBy_yBy_(advance, 0)
-			fullPath.transformUsingAffineTransform_( transform )
+					transform.translateXBy_yBy_(advance, 0)
+					layerPath.transformUsingAffineTransform_( transform )
+					advance += layer.width + kernValue
+					
+					fullPath.appendBezierPath_(layerPath)
 		except StandardError:
 			print(traceback.format_exc())
 		
