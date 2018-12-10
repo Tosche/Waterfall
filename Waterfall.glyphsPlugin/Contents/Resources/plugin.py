@@ -29,10 +29,7 @@ emoji_variation_selector = re.compile(u'[\ufe00-\ufe0f]', re.UNICODE)
 
 class WaterfallView(NSView):
 	def drawRect_(self, rect):
-		try:
-			self.wrapper._backColour.set()
-		except:
-			NSColor.whiteColor().set()
+		self.wrapper._backColour.set()
 		NSBezierPath.fillRect_(rect)
 		sizes = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72, 90, 120]
 		lineSpace = 8
@@ -53,10 +50,8 @@ class WaterfallView(NSView):
 			m = f.masters[0]
 		fullPath = NSBezierPath.alloc().init()
 		advance = 0
-		try:
-			self.wrapper._foreColour.set()
-		except AttributeError:
-			NSColor.blackColor().set()
+		self.wrapper._foreColour.set()
+		
 		try:
 			for i, g in enumerate(gs):
 				if len(g) == 1:
@@ -166,6 +161,7 @@ class TheView(VanillaBaseObject):
 class WaterfallWindow(GeneralPlugin):
 	def settings(self):
 		self.name = Glyphs.localize({'en': u'Waterfall', 'de': u'Wasserfall', 'ko': u'폭포형태로 보기'})
+		Glyphs.registerDefaults({"com.Tosche.Waterfall.foreColour": [0, 0, 0, 1], "com.Tosche.Waterfall.backColour": [1, 1, 1, 1]})
 
 	## creates Vanilla Window
 	#------------------------
@@ -191,8 +187,8 @@ class WaterfallWindow(GeneralPlugin):
 			self.w.edit = EditText( (spX, spY, (-spX*3-clX*2)-80, edY), text="The quick brown jumps over the lazy dog.", callback=self.textChanged)
 			self.w.edit.getNSTextField().setNeedsDisplay_(True)
 			self.w.edit.getNSTextField().setNeedsLayout_(True)
-			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=NSColor.blackColor(), callback=self.uiChange)
-			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=NSColor.whiteColor(), callback=self.uiChange)
+			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), callback=self.uiChange)
+			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), callback=self.uiChange)
 			self.w.refresh = Button((-spX-138, spY, 80, edY), "Refresh", callback=self.textChanged)
 			self.w.instancePopup = PopUpButton((spX, spY*2+edY, -spX, edY), insList, callback=self.changeInstance)
 			self.w.preview = TheView((0, spX*3+edY*2, -0, -0))
