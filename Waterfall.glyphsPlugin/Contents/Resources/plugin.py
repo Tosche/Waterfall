@@ -73,36 +73,19 @@ class WaterfallView(NSView):
 				glyph = self.glyphForName(glyphName, font)
 				if glyph:
 					fullPath.appendBezierPath_(gl.completeBezierPath)
+					layer = glyph.layers[m.id]
 					kernValue = 0
 					# kerning check
-					if i+1 < len(gs) and f.glyphs[gs[i+1]]:
-						klg = None
-						kli = glyph.id
-						krg = None
-						kri = f.glyphs[gs[i+1]].id
-						if glyph.rightKerningGroup:
-							klg = "@MMK_L_" + glyph.rightKerningGroup
-						if f.glyphs[gs[i+1]].leftKerningGroup:
-							krg = "@MMK_R_" + f.glyphs[gs[i+1]].leftKerningGroup
-						try:
-							kernValue = f.kerning[m.id][klg][krg]
-							try:
-								kernValue = f.kerning[m.id][kli][krg]
-							except:
-								pass
-							try:
-								kernValue = f.kerning[m.id][klg][kri]
-							except:
-								pass
-							try:
-								kernValue = f.kerning[m.id][kli][kri]
-							except:
-								pass
-						except:
-							kernValue = 0
-					else:
-						kernValue = 0
-					advance += gl.width + kernValue
+					if i+1 < len(glyphNames):
+						nextGlyphName = glyphNames[i+1]
+						nextGlyph = self.glyphForName(nextGlyphName, font)
+						if nextGlyph:
+							nextLayer = nextGlyph.layers[m.id]
+							if nextLayer:
+								kernValue = layer.rightKerningForLayer_(nextLayer)
+								if kernValue > 10000:
+									kernValue = 0
+					
 					transform = NSAffineTransform.transform()
 					transform.translateXBy_yBy_(-gl.width-kernValue, 0)
 					fullPath.transformUsingAffineTransform_( transform )
