@@ -168,7 +168,6 @@ class WaterfallWindow(GeneralPlugin):
 			insList = [i.name for i in Glyphs.font.instances]
 			insList.insert(0, 'Current Master')
 			self.w.edit = EditText( (spX, spY, (-spX*3-clX*2)-80, edY), text="The quick brown jumps over the lazy dog.", callback=self.textChanged)
-			self.w.edit.getNSTextField().setNeedsDisplay_(True)
 			self.w.edit.getNSTextField().setNeedsLayout_(True)
 			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), callback=self.uiChange)
 			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), callback=self.uiChange)
