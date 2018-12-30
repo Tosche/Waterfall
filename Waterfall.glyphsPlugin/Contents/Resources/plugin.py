@@ -167,9 +167,6 @@ class WaterfallWindow(GeneralPlugin):
 	def settings(self):
 		self.name = "Waterfall"
 
-	## creates Vanilla Window
-	#------------------------
-
 	def showWindow(self, sender):
 		try:
 			edY = 22
@@ -191,8 +188,10 @@ class WaterfallWindow(GeneralPlugin):
 			self.w.edit = EditText( (spX, spY, (-spX*3-clX*2)-80, edY), text="The quick brown jumps over the lazy dog.", callback=self.textChanged)
 			self.w.edit.getNSTextField().setNeedsDisplay_(True)
 			self.w.edit.getNSTextField().setNeedsLayout_(True)
-			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=NSColor.blackColor(), callback=self.uiChange)
-			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=NSColor.whiteColor(), callback=self.uiChange)
+			defaultWhite = NSColor.colorWithCalibratedRed_green_blue_alpha_(1,1,1,1)
+			defaultBlack = NSColor.colorWithCalibratedRed_green_blue_alpha_(0,0,0,1)
+			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=defaultBlack, callback=self.uiChange)
+			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=defaultWhite, callback=self.uiChange)
 			self.w.refresh = Button((-spX-138, spY, 80, edY), "Refresh", callback=self.textChanged)
 			self.w.instancePopup = PopUpButton((spX, spY*2+edY, -spX, edY), insList, callback=self.changeInstance)
 			self.w.preview = TheView((0, spX*3+edY*2, -0, -0))
