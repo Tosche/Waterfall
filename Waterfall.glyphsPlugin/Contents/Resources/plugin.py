@@ -146,9 +146,6 @@ class WaterfallWindow(GeneralPlugin):
 		self.name = Glyphs.localize({'en': u'Waterfall', 'de': u'Wasserfall', 'ko': u'폭포형태로 보기'})
 		Glyphs.registerDefaults({"com.Tosche.Waterfall.foreColour": [0, 0, 0, 1], "com.Tosche.Waterfall.backColour": [1, 1, 1, 1]})
 
-	## creates Vanilla Window
-	#------------------------
-
 	def showWindow(self, sender):
 		try:
 			edY = 22
@@ -169,8 +166,10 @@ class WaterfallWindow(GeneralPlugin):
 			insList.insert(0, 'Current Master')
 			self.w.edit = EditText( (spX, spY, (-spX*3-clX*2)-80, edY), text="The quick brown jumps over the lazy dog.", callback=self.textChanged)
 			self.w.edit.getNSTextField().setNeedsLayout_(True)
-			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), callback=self.uiChange)
-			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), callback=self.uiChange)
+			defaultWhite = NSColor.colorWithCalibratedRed_green_blue_alpha_(1,1,1,1)
+			defaultBlack = NSColor.colorWithCalibratedRed_green_blue_alpha_(0,0,0,1)
+			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=defaultBlack, callback=self.uiChange)
+			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=defaultWhite, callback=self.uiChange)
 			self.w.refresh = Button((-spX-138, spY, 80, edY), "Refresh", callback=self.textChanged)
 			self.w.instancePopup = PopUpButton((spX, spY*2+edY, -spX, edY), insList, callback=self.changeInstance)
 			self.w.preview = TheView((0, spX*3+edY*2, -0, -0))
