@@ -14,108 +14,93 @@
 
 #https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/CocoaViewsGuide/SubclassingNSView/SubclassingNSView.html
 
+from __future__ import print_function, unicode_literals
 from GlyphsApp import *
 from GlyphsApp.plugins import *
 from vanilla import *
 from AppKit import NSAffineTransform, NSRectFill, NSView, NSNoBorder, NSColor, NSBezierPath, NSMutableParagraphStyle, NSParagraphStyleAttributeName
 from Foundation import NSWidth, NSHeight, NSMidX, NSMidY
 import traceback
-import re
+import re, objc
 
 surrogate_pairs = re.compile(u'[\ud800-\udbff][\udc00-\udfff]', re.UNICODE)
 surrogate_start = re.compile(u'[\ud800-\udbff]', re.UNICODE)
 emoji_variation_selector = re.compile(u'[\ufe00-\ufe0f]', re.UNICODE)
 
+def getKernValue(layer1, layer2):
+	if Glyphs.buildNumber > 3000:
+		return layer1.nextKerningForLayer_direction_(layer2, LTR)
+	else:
+		return layer1.rightKerningForLayer_(layer2)
 
 class WaterfallView(NSView):
+
+	@objc.python_method
+	def glyphForName(self, name, font):
+		if len(name) == 1:
+			glyph_unicode = "%.4X" % ord(name)
+		else:
+			glyph_unicode = name.encode('unicode-escape')
+		glyph = font.glyphs[glyph_unicode]
+		if glyph is None:
+			if len(glyph_unicode) == 10:
+				glyph_unicode = glyph_unicode[5:].upper()
+			glyph = f.glyphForUnicode_(glyph_unicode)
+		if glyph is None:
+			glyph = font.glyphs['.notdef']
+		return glyph
+
 	def drawRect_(self, rect):
-		try:
-			self.wrapper._backColour.set()
-		except:
-			NSColor.whiteColor().set()
+		self.wrapper._backColour.set()
 		NSBezierPath.fillRect_(rect)
 		sizes = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72, 90, 120]
 		lineSpace = 8
 		tab = 30
 		w = NSWidth(self.frame())
 		h = NSHeight(self.frame())
-		gs = self.wrapper._glyphsList
+		glyphNames = self.wrapper._glyphsList
 		insIndex = self.wrapper._instanceIndex
 		if insIndex == 0:
-			f = Glyphs.font
-			m = f.selectedFontMaster
+			font = Glyphs.font
+			m = font.selectedFontMaster
 		else:
 			instance = Glyphs.font.instances[insIndex-1]
-			f = self.wrapper.instances.get(instance.name)
-			if f is None:
-				f = instance.interpolatedFont
-				self.wrapper.instances[instance.name] = f
-			m = f.masters[0]
+			font = self.wrapper.instances.get(instance.name)
+			if font is None:
+				font = instance.interpolatedFont
+				self.wrapper.instances[instance.name] = font
+			m = font.masters[0]
 		fullPath = NSBezierPath.alloc().init()
 		advance = 0
+		self.wrapper._foreColour.set()
+		
 		try:
-			self.wrapper._foreColour.set()
-		except AttributeError:
-			NSColor.blackColor().set()
-		try:
-			for i, g in enumerate(gs):
-				if len(g) == 1:
-					glyph_unicode = hex(ord(g)).upper().replace('0X', '').zfill(4)
-				else:
-					glyph_unicode = g.encode('unicode-escape')
-				glyph = f.glyphs[glyph_unicode]
-				if glyph is None:
-					if len(glyph_unicode) == 10:
-						glyph_unicode = glyph_unicode[5:].upper()
-					glyph = self.wrapper.unicode_dict.get(glyph_unicode)
-				if glyph is None:
-					glyph = f.glyphs['.notdef']
-
+			for i, glyphName in enumerate(glyphNames):
+				
+				glyph = self.glyphForName(glyphName, font)
 				if glyph:
-					gl = glyph.layers[m.id]
-					if not gl:
-						try:
-							gl = f.glyphs[glyph_unicode].layers[m.id]
-						except AttributeError:
-							continue
-					fullPath.appendBezierPath_(gl.completeBezierPath)
+					layer = glyph.layers[m.id]
+					
+					layerPath = layer.completeBezierPath
 					kernValue = 0
 					# kerning check
-					if i+1 < len(gs) and f.glyphs[gs[i+1]]:
-						klg = None
-						kli = glyph.id
-						krg = None
-						kri = f.glyphs[gs[i+1]].id
-						if glyph.rightKerningGroup:
-							klg = "@MMK_L_" + glyph.rightKerningGroup
-						if f.glyphs[gs[i+1]].leftKerningGroup:
-							krg = "@MMK_R_" + f.glyphs[gs[i+1]].leftKerningGroup
-						try:
-							kernValue = f.kerning[m.id][klg][krg]
-							try:
-								kernValue = f.kerning[m.id][kli][krg]
-							except:
-								pass
-							try:
-								kernValue = f.kerning[m.id][klg][kri]
-							except:
-								pass
-							try:
-								kernValue = f.kerning[m.id][kli][kri]
-							except:
-								pass
-						except:
-							kernValue = 0
-					else:
-						kernValue = 0
-					advance += gl.width + kernValue
+					if i + 1 < len(glyphNames):
+						nextGlyphName = glyphNames[i + 1]
+						nextGlyph = self.glyphForName(nextGlyphName, font)
+						if nextGlyph:
+							nextLayer = nextGlyph.layers[m.id]
+							if nextLayer:
+								kernValue = getKernValue(layer, nextLayer)
+								if kernValue > 10000:
+									kernValue = 0
+					
 					transform = NSAffineTransform.transform()
-					transform.translateXBy_yBy_(-gl.width-kernValue, 0)
-					fullPath.transformUsingAffineTransform_( transform )
-			transform = NSAffineTransform.transform()
-			transform.translateXBy_yBy_(advance, 0)
-			fullPath.transformUsingAffineTransform_( transform )
-		except StandardError:
+					transform.translateXBy_yBy_(advance, 0)
+					layerPath.transformUsingAffineTransform_( transform )
+					advance += layer.width + kernValue
+					
+					fullPath.appendBezierPath_(layerPath)
+		except:
 			print(traceback.format_exc())
 		
 		if fullPath is None:
@@ -123,7 +108,7 @@ class WaterfallView(NSView):
 		
 		try:
 			sSum = 0
-			upm = float(f.upm)
+			upm = float(font.upm)
 			for i, s in enumerate(sizes):
 				sSum += s + s/4
 				transform = NSAffineTransform.transform()
@@ -137,6 +122,7 @@ class WaterfallView(NSView):
 		except StandardError:
 			print(traceback.format_exc())
 
+	@objc.python_method
 	def drawText(self, text, textColour, x, y):
 		paragraphStyle = NSMutableParagraphStyle.alloc().init()
 		paragraphStyle.setAlignment_(1) ## 0=L, 1=R, 2=C, 3=justified
@@ -164,10 +150,12 @@ class TheView(VanillaBaseObject):
 
 
 class WaterfallWindow(GeneralPlugin):
+	@objc.python_method
 	def settings(self):
-		self.name = "Waterfall"
+		self.name = Glyphs.localize({'en': u'Waterfall', 'de': u'Wasserfall', 'ko': u'폭포형태로 보기'})
+		Glyphs.registerDefaults({"com.Tosche.Waterfall.foreColour": [0, 0, 0, 1], "com.Tosche.Waterfall.backColour": [1, 1, 1, 1]})
 
-	def showWindow(self, sender):
+	def showWindow_(self, sender):
 		try:
 			edY = 22
 			clX = 22
@@ -179,34 +167,33 @@ class WaterfallWindow(GeneralPlugin):
 			self.currentDocument = Glyphs.currentDocument
 			self.thisfont = Glyphs.font
 			# self.thisfont = GlyphsApp.currentFont()
-			self.w = FloatingWindow((self.windowWidth, self.windowWidth), "Waterfall",
+			self.w = FloatingWindow((self.windowWidth, self.windowWidth), self.name,
 				autosaveName = "com.Tosche.Waterfall.mainwindow",
-				minSize=(self.windowWidth, self.windowWidth+20))
-			self.w.bind("close", self.windowClosed)
+				minSize=(self.windowWidth, self.windowWidth + 20))
+			self.w.bind("close", self.windowClosed_)
 			insList = [i.name for i in Glyphs.font.instances]
 			insList.insert(0, 'Current Master')
-			self.w.edit = EditText( (spX, spY, (-spX*3-clX*2)-80, edY), text="The quick brown jumps over the lazy dog.", callback=self.textChanged)
-			self.w.edit.getNSTextField().setNeedsDisplay_(True)
+			self.w.edit = EditText( (spX, spY, (-spX*3-clX*2)-80, edY), text="The quick brown jumps over the lazy dog.", callback=self.textChanged_)
 			self.w.edit.getNSTextField().setNeedsLayout_(True)
 			defaultWhite = NSColor.colorWithCalibratedRed_green_blue_alpha_(1,1,1,1)
 			defaultBlack = NSColor.colorWithCalibratedRed_green_blue_alpha_(0,0,0,1)
-			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=defaultBlack, callback=self.uiChange)
-			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=defaultWhite, callback=self.uiChange)
-			self.w.refresh = Button((-spX-138, spY, 80, edY), "Refresh", callback=self.textChanged)
-			self.w.instancePopup = PopUpButton((spX, spY*2+edY, -spX, edY), insList, callback=self.changeInstance)
+			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=defaultBlack, callback=self.uiChange_)
+			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=defaultWhite, callback=self.uiChange_)
+			self.w.refresh = Button((-spX-138, spY, 80, edY), "Refresh", callback=self.textChanged_)
+			self.w.instancePopup = PopUpButton((spX, spY*2+edY, -spX, edY), insList, callback=self.changeInstance_)
 			self.w.preview = TheView((0, spX*3+edY*2, -0, -0))
 			self.w.preview.instances = {}
-			self.w.preview.unicode_dict = {}
 			self.loadPrefs()
 			self.w.open()
-			self.uiChange(None)
-			self.changeInstance(self.w.instancePopup)
-			self.textChanged(self.w.edit)
-			Glyphs.addCallback(self.changeInstance, UPDATEINTERFACE)  # will be called on every change to the interface
-			Glyphs.addCallback(self.changeDocument, DOCUMENTACTIVATED)
+			self.uiChange_(None)
+			self.changeInstance_(self.w.instancePopup)
+			self.textChanged_(self.w.edit)
+			Glyphs.addCallback(self.changeInstance_, UPDATEINTERFACE)  # will be called on every change to the interface
+			Glyphs.addCallback(self.changeDocument_, DOCUMENTACTIVATED)
 		except:
 			print(traceback.format_exc())
 
+	@objc.python_method
 	def loadPrefs(self):
 		try:
 			editText = Glyphs.defaults["com.Tosche.Waterfall.edit"]
@@ -219,6 +206,7 @@ class WaterfallWindow(GeneralPlugin):
 		except StandardError:
 			print(traceback.format_exc())
 
+	@objc.python_method
 	def makeList(self, string):
 		try:
 			newList = [c for c in string.encode('utf-8', 'surrogatepass').decode('utf-8', 'replace')]
@@ -262,16 +250,11 @@ class WaterfallWindow(GeneralPlugin):
 			print("Waterfall Error (makeList)", traceback.format_exc())
 			Glyphs.showMacroWindow()
 
-	def textChanged(self, sender):
-		for g in Glyphs.font.glyphs:
-			if g.unicode:
-				self.w.preview.unicode_dict[str(g.unicode)] = g
-
-		self.w.preview._glyphsList = ''
+	def textChanged_(self, sender):
 		self.w.preview._glyphsList = self.makeList(self.w.edit.get())
 		self.w.preview.redraw()
 
-	def uiChange(self, sender):
+	def uiChange_(self, sender):
 		try:
 			NSC_f = self.w.foreColour.get()
 			R_f, G_f, B_f, A_f = NSC_f.redComponent(), NSC_f.greenComponent(), NSC_f.blueComponent(), NSC_f.alphaComponent()
@@ -288,7 +271,7 @@ class WaterfallWindow(GeneralPlugin):
 		except StandardError:
 			print(traceback.format_exc())
 
-	def changeDocument(self, sender):
+	def changeDocument_(self, sender):
 		"""
 		Update when current document changes (choosing another open Font)
 		"""
@@ -296,10 +279,10 @@ class WaterfallWindow(GeneralPlugin):
 		self.w.instancePopup.setItems([])
 		self.w.preview._instanceIndex = 0
 		self.w.preview.redraw()
-		self.changeInstance(self.w.instancePopup)
-		self.textChanged(None)
+		self.changeInstance_(self.w.instancePopup)
+		self.textChanged_(None)
 
-	def changeInstance(self, sender):
+	def changeInstance_(self, sender):
 		currentIndex = self.w.instancePopup.get()
 		insList = [i.name for i in Glyphs.font.instances]
 		insList.insert(0, 'Current Master')
@@ -309,8 +292,9 @@ class WaterfallWindow(GeneralPlugin):
 		self.w.preview._instanceIndex = currentIndex
 		self.w.preview.redraw()
 
+	@objc.python_method
 	def start(self):
-		newMenuItem = NSMenuItem(self.name, self.showWindow)
+		newMenuItem = NSMenuItem(self.name, self.showWindow_)
 		Glyphs.menu[WINDOW_MENU].append(newMenuItem)
 
 	def setWindowController_(self, windowController):
@@ -319,12 +303,13 @@ class WaterfallWindow(GeneralPlugin):
 		except:
 			self.logError(traceback.format_exc())
 
-	def windowClosed(self, sender):
+	def windowClosed_(self, sender):
 		Glyphs.defaults["com.Tosche.Waterfall.edit"] = self.w.edit.get()
 
+	@objc.python_method
 	def __del__(self):
-		Glyphs.removeCallback(self.changeInstance, UPDATEINTERFACE)
-		Glyphs.removeCallback(self.changeDocument, DOCUMENTACTIVATED)
+		Glyphs.removeCallback(self.changeInstance_, UPDATEINTERFACE)
+		Glyphs.removeCallback(self.changeDocument_, DOCUMENTACTIVATED)
 
 	def __file__(self):
 		"""Please leave this method unchanged"""
