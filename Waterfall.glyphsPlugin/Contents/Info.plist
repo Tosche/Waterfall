@@ -15,13 +15,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.2</string>
 	<key>CFBundleVersion</key>
-	<string>12</string>
-	<key>UpdateFeedURL</key>
-	<string></string>
-	<key>productPageURL</key>
-	<string></string>	
-	<key>productReleaseNotes</key>
-	<string>First Release version</string>
+	<string>13</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright, Toshi Omagari, 2017</string>
 	<key>NSPrincipalClass</key>
