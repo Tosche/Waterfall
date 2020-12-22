@@ -119,7 +119,7 @@ class WaterfallView(NSView):
 				fullPath.fill()
 				transform.invert()
 				fullPath.transformUsingAffineTransform_(transform)
-		except StandardError:
+		except:
 			print(traceback.format_exc())
 
 	@objc.python_method
@@ -153,7 +153,11 @@ class WaterfallWindow(GeneralPlugin):
 	@objc.python_method
 	def settings(self):
 		self.name = Glyphs.localize({'en': u'Waterfall', 'de': u'Wasserfall', 'ko': u'폭포형태로 보기'})
-		Glyphs.registerDefaults({"com.Tosche.Waterfall.foreColour": [0, 0, 0, 1], "com.Tosche.Waterfall.backColour": [1, 1, 1, 1]})
+		if Glyphs.versionNumber < 3:
+			Glyphs.registerDefaults({"com.Tosche.Waterfall.foreColour": [0, 0, 0, 1], "com.Tosche.Waterfall.backColour": [1, 1, 1, 1]})
+		else:
+			Glyphs.colorDefaults["com.Tosche.Waterfall.foreColour"] = NSColor.blackColor()
+			Glyphs.colorDefaults["com.Tosche.Waterfall.backColour"] = NSColor.whiteColor()
 
 	def showWindow_(self, sender):
 		try:
@@ -179,6 +183,8 @@ class WaterfallWindow(GeneralPlugin):
 			defaultBlack = NSColor.colorWithCalibratedRed_green_blue_alpha_(0,0,0,1)
 			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=defaultBlack, callback=self.uiChange_)
 			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=defaultWhite, callback=self.uiChange_)
+			self._foreColour = defaultBlack
+			self._backColour = defaultWhite
 			self.w.refresh = Button((-spX-138, spY, 80, edY), "Refresh", callback=self.textChanged_)
 			self.w.instancePopup = PopUpButton((spX, spY*2+edY, -spX, edY), insList, callback=self.changeInstance_)
 			self.w.preview = TheView((0, spX*3+edY*2, -0, -0))
@@ -199,11 +205,17 @@ class WaterfallWindow(GeneralPlugin):
 			editText = Glyphs.defaults["com.Tosche.Waterfall.edit"]
 			if editText:
 				self.w.edit.set(editText)
-			R_f, G_f, B_f, A_f = Glyphs.defaults["com.Tosche.Waterfall.foreColour"]
-			self.w.foreColour.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(float(R_f), float(G_f), float(B_f), float(A_f)))
-			R_b, G_b, B_b, A_b = Glyphs.defaults["com.Tosche.Waterfall.backColour"]
-			self.w.backColour.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(float(R_b), float(G_b), float(B_b), float(A_b)))
-		except StandardError:
+			if Glyphs.versionNumber < 3:
+				R_f, G_f, B_f, A_f = Glyphs.defaults["com.Tosche.Waterfall.foreColour"]
+				self.w.foreColour.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(float(R_f), float(G_f), float(B_f), float(A_f)))
+				R_b, G_b, B_b, A_b = Glyphs.defaults["com.Tosche.Waterfall.backColour"]
+				self.w.backColour.set(NSColor.colorWithCalibratedRed_green_blue_alpha_(float(R_b), float(G_b), float(B_b), float(A_b)))
+			else:
+				f = Glyphs.colorDefaults["com.Tosche.Waterfall.foreColour"]
+				self.w.foreColour.set(f)
+				b = Glyphs.colorDefaults["com.Tosche.Waterfall.backColour"]
+				self.w.backColour.set(b)
+		except:
 			print(traceback.format_exc())
 
 	@objc.python_method
@@ -246,7 +258,7 @@ class WaterfallWindow(GeneralPlugin):
 							filtered.append(c)
 				if filtered:
 					return filtered
-		except StandardError:
+		except:
 			print("Waterfall Error (makeList)", traceback.format_exc())
 			Glyphs.showMacroWindow()
 
@@ -257,18 +269,22 @@ class WaterfallWindow(GeneralPlugin):
 	def uiChange_(self, sender):
 		try:
 			NSC_f = self.w.foreColour.get()
-			R_f, G_f, B_f, A_f = NSC_f.redComponent(), NSC_f.greenComponent(), NSC_f.blueComponent(), NSC_f.alphaComponent()
 			NSC_b = self.w.backColour.get()
-			R_b, G_b, B_b, A_b = NSC_b.redComponent(), NSC_b.greenComponent(), NSC_b.blueComponent(), NSC_b.alphaComponent()
 			self.w.preview._foreColour = NSC_f
 			self.w.preview._backColour = NSC_b
 			self.w.preview.redraw()
 			try:
-				Glyphs.defaults["com.Tosche.Waterfall.foreColour"] = (str(R_f), str(G_f), str(B_f), str(A_f))
-				Glyphs.defaults["com.Tosche.Waterfall.backColour"] = (str(R_b), str(G_b), str(B_b), str(A_b))
-			except AttributeError:
+				if Glyphs.versionNumber < 3:
+					R_f, G_f, B_f, A_f = NSC_f.redComponent(), NSC_f.greenComponent(), NSC_f.blueComponent(), NSC_f.alphaComponent()
+					R_b, G_b, B_b, A_b = NSC_b.redComponent(), NSC_b.greenComponent(), NSC_b.blueComponent(), NSC_b.alphaComponent()
+					Glyphs.defaults["com.Tosche.Waterfall.foreColour"] = (R_f, G_f, B_f, A_f)
+					Glyphs.defaults["com.Tosche.Waterfall.backColour"] = (R_b, G_b, B_b, A_b)
+				else:
+					Glyphs.colorDefaults["com.Tosche.Waterfall.foreColour"] = NSC_f
+					Glyphs.colorDefaults["com.Tosche.Waterfall.backColour"] = NSC_b
+			except:
 				print(traceback.format_exc())
-		except StandardError:
+		except:
 			print(traceback.format_exc())
 
 	def changeDocument_(self, sender):
