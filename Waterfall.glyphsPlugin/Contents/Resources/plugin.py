@@ -183,11 +183,11 @@ class WaterfallWindow(GeneralPlugin):
 			defaultBlack = NSColor.colorWithCalibratedRed_green_blue_alpha_(0,0,0,1)
 			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=defaultBlack, callback=self.uiChange_)
 			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=defaultWhite, callback=self.uiChange_)
-			self._foreColour = defaultBlack
-			self._backColour = defaultWhite
 			self.w.refresh = Button((-spX-138, spY, 80, edY), "Refresh", callback=self.textChanged_)
 			self.w.instancePopup = PopUpButton((spX, spY*2+edY, -spX, edY), insList, callback=self.changeInstance_)
 			self.w.preview = TheView((0, spX*3+edY*2, -0, -0))
+			self.w.preview._foreColour = defaultBlack
+			self.w.preview._backColour = defaultWhite
 			self.w.preview.instances = {}
 			self.loadPrefs()
 			self.w.open()
