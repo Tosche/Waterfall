@@ -51,36 +51,36 @@ class WaterfallView(NSView):
 		return glyph
 
 	def drawRect_(self, rect):
-		self.wrapper._backColour.set()
-		NSBezierPath.fillRect_(rect)
-		sizes = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72, 90, 120]
-		lineSpace = 8
-		tab = 30
-		w = NSWidth(self.frame())
-		h = NSHeight(self.frame())
-		glyphNames = self.wrapper._glyphsList
-		insIndex = self.wrapper._instanceIndex
-		if insIndex == 0:
-			font = Glyphs.font
-			m = font.selectedFontMaster
-		else:
-			instance = Glyphs.font.instances[insIndex-1]
-			font = self.wrapper.instances.get(instance.name)
-			if font is None:
-				font = instance.interpolatedFont
-				self.wrapper.instances[instance.name] = font
-			m = font.masters[0]
-		fullPath = NSBezierPath.alloc().init()
-		advance = 0
-		self.wrapper._foreColour.set()
-		
 		try:
+			self.wrapper._backColour.set()
+			NSBezierPath.fillRect_(rect)
+			sizes = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72, 90, 120]
+			lineSpace = 8
+			tab = 30
+			w = NSWidth(self.frame())
+			h = NSHeight(self.frame())
+			glyphNames = self.wrapper._glyphsList
+			insIndex = self.wrapper._instanceIndex
+			if insIndex == 0:
+				font = Glyphs.font
+				m = font.selectedFontMaster
+			else:
+				instance = Glyphs.font.instances[insIndex-1]
+				font = self.wrapper.instances.get(instance.name)
+				if font is None:
+					font = instance.interpolatedFont
+					self.wrapper.instances[instance.name] = font
+				m = font.masters[0]
+			fullPath = NSBezierPath.alloc().init()
+			advance = 0
+			self.wrapper._foreColour.set()
+		
 			for i, glyphName in enumerate(glyphNames):
-				
+			
 				glyph = self.glyphForName(glyphName, font)
 				if glyph:
 					layer = glyph.layers[m.id]
-					
+				
 					layerPath = layer.completeBezierPath
 					kernValue = 0
 					# kerning check
@@ -93,20 +93,16 @@ class WaterfallView(NSView):
 								kernValue = getKernValue(layer, nextLayer)
 								if kernValue > 10000:
 									kernValue = 0
-					
 					transform = NSAffineTransform.transform()
 					transform.translateXBy_yBy_(advance, 0)
 					layerPath.transformUsingAffineTransform_( transform )
 					advance += layer.width + kernValue
-					
+
 					fullPath.appendBezierPath_(layerPath)
-		except:
-			print(traceback.format_exc())
+
+			if fullPath is None:
+				return
 		
-		if fullPath is None:
-			return
-		
-		try:
 			sSum = 0
 			upm = float(font.upm)
 			for i, s in enumerate(sizes):
@@ -119,8 +115,11 @@ class WaterfallView(NSView):
 				fullPath.fill()
 				transform.invert()
 				fullPath.transformUsingAffineTransform_(transform)
-		except:
-			print(traceback.format_exc())
+		except Exception as e:
+			self.performSelector_withObject_afterDelay_("showException:", e, 0.1)
+
+	def showException_(self, e):
+		raise e # rainig it here means the drawing context is closed and we dont mess with the app
 
 	@objc.python_method
 	def drawText(self, text, textColour, x, y):
