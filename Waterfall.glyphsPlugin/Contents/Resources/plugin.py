@@ -15,13 +15,15 @@
 #https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/CocoaViewsGuide/SubclassingNSView/SubclassingNSView.html
 
 from __future__ import print_function, unicode_literals
-from GlyphsApp import *
-from GlyphsApp.plugins import *
-from vanilla import *
-from AppKit import NSAffineTransform, NSRectFill, NSView, NSNoBorder, NSColor, NSBezierPath, NSMutableParagraphStyle, NSParagraphStyleAttributeName
-from Foundation import NSWidth, NSHeight, NSMidX, NSMidY
+from GlyphsApp import Glyphs, UPDATEINTERFACE, DOCUMENTACTIVATED, LTR, WINDOW_MENU
+from GlyphsApp.plugins import GeneralPlugin
+from vanilla import VanillaBaseObject, FloatingWindow, EditText, ColorWell, Button, PopUpButton
+from AppKit import NSMenuItem, NSAffineTransform, NSView, NSColor, NSBezierPath, NSAttributedString, NSFont, NSMutableParagraphStyle, NSParagraphStyleAttributeName, NSForegroundColorAttributeName, NSFontAttributeName
+from Foundation import NSHeight
 import traceback
-import re, objc
+import re
+import objc
+from typing import Any
 
 surrogate_pairs = re.compile(u'[\ud800-\udbff][\udc00-\udfff]', re.UNICODE)
 surrogate_start = re.compile(u'[\ud800-\udbff]', re.UNICODE)
@@ -34,6 +36,7 @@ def getKernValue(layer1, layer2):
 		return layer1.rightKerningForLayer_(layer2)
 
 class WaterfallView(NSView):
+	wrapper: Any
 
 	@objc.python_method
 	def glyphForName(self, name, font):
@@ -45,7 +48,7 @@ class WaterfallView(NSView):
 		if glyph is None:
 			if len(glyph_unicode) == 10:
 				glyph_unicode = glyph_unicode[5:].upper()
-			glyph = f.glyphForUnicode_(glyph_unicode)
+			glyph = font.glyphForUnicode_(glyph_unicode)
 		if glyph is None:
 			glyph = font.glyphs['.notdef']
 		return glyph
@@ -55,9 +58,9 @@ class WaterfallView(NSView):
 			self.wrapper._backColour.set()
 			NSBezierPath.fillRect_(rect)
 			sizes = [8, 9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72, 90, 120]
-			lineSpace = 8
+			# lineSpace = 8
 			tab = 30
-			w = NSWidth(self.frame())
+			# w = NSWidth(self.frame())
 			h = NSHeight(self.frame())
 			glyphNames = self.wrapper._glyphsList
 			insIndex = self.wrapper._instanceIndex
@@ -65,7 +68,7 @@ class WaterfallView(NSView):
 				font = Glyphs.font
 				m = font.selectedFontMaster
 			else:
-				instance = Glyphs.font.instances[insIndex-1]
+				instance = Glyphs.font.instances[insIndex - 1]
 				font = self.wrapper.instances.get(instance.name)
 				if font is None:
 					font = instance.interpolatedFont
@@ -74,13 +77,13 @@ class WaterfallView(NSView):
 			fullPath = NSBezierPath.alloc().init()
 			advance = 0
 			self.wrapper._foreColour.set()
-		
+
 			for i, glyphName in enumerate(glyphNames):
-			
+
 				glyph = self.glyphForName(glyphName, font)
 				if glyph:
 					layer = glyph.layers[m.id]
-				
+
 					layerPath = layer.completeBezierPath
 					kernValue = 0
 					# kerning check
@@ -95,22 +98,22 @@ class WaterfallView(NSView):
 									kernValue = 0
 					transform = NSAffineTransform.transform()
 					transform.translateXBy_yBy_(advance, 0)
-					layerPath.transformUsingAffineTransform_( transform )
+					layerPath.transformUsingAffineTransform_(transform)
 					advance += layer.width + kernValue
 
 					fullPath.appendBezierPath_(layerPath)
 
 			if fullPath is None:
 				return
-		
+
 			sSum = 0
 			upm = float(font.upm)
 			for i, s in enumerate(sizes):
-				sSum += s + s/4
+				sSum += s + s / 4
 				transform = NSAffineTransform.transform()
-				transform.scaleBy_(s/upm)
-				transform.translateXBy_yBy_(tab*upm/s, (h-s-sSum)*upm/s)
-				self.drawText(str(s), self.wrapper._foreColour, 10, h-s-sSum-2)
+				transform.scaleBy_(s / upm)
+				transform.translateXBy_yBy_(tab * upm / s, (h - s - sSum) * upm / s)
+				self.drawText(str(s), self.wrapper._foreColour, 10, h - s - sSum - 2)
 				fullPath.transformUsingAffineTransform_(transform)
 				fullPath.fill()
 				transform.invert()
@@ -119,12 +122,12 @@ class WaterfallView(NSView):
 			self.performSelector_withObject_afterDelay_("showException:", e, 0.1)
 
 	def showException_(self, e):
-		raise e # rainig it here means the drawing context is closed and we dont mess with the app
+		raise e  # rainig it here means the drawing context is closed and we dont mess with the app
 
 	@objc.python_method
 	def drawText(self, text, textColour, x, y):
 		paragraphStyle = NSMutableParagraphStyle.alloc().init()
-		paragraphStyle.setAlignment_(1) ## 0=L, 1=R, 2=C, 3=justified
+		paragraphStyle.setAlignment_(1)  # 0=L, 1=R, 2=C, 3=justified
 		attributes = {}
 		attributes[NSFontAttributeName] = NSFont.systemFontOfSize_(9)
 		attributes[NSForegroundColorAttributeName] = textColour
@@ -164,27 +167,29 @@ class WaterfallWindow(GeneralPlugin):
 			clX = 22
 			spX = 8
 			spY = 8
-			btnY = 17
+			# btnY = 17
 			self.windowWidth = 300
 			self.windowHeight = 240
 			self.currentDocument = Glyphs.currentDocument
 			self.thisfont = Glyphs.font
 			# self.thisfont = GlyphsApp.currentFont()
-			self.w = FloatingWindow((self.windowWidth, self.windowWidth), self.name,
-				autosaveName = "com.Tosche.Waterfall.mainwindow",
-				minSize=(self.windowWidth, self.windowWidth + 20))
+			self.w = FloatingWindow(
+				(self.windowWidth, self.windowWidth), self.name,
+				autosaveName="com.Tosche.Waterfall.mainwindow",
+				minSize=(self.windowWidth, self.windowWidth + 20)
+			)
 			self.w.bind("close", self.windowClosed_)
 			insList = [i.name for i in Glyphs.font.instances]
 			insList.insert(0, 'Current Master')
-			self.w.edit = EditText( (spX, spY, (-spX*3-clX*2)-80, edY), text="The quick brown jumps over the lazy dog.", callback=self.textChanged_)
+			self.w.edit = EditText((spX, spY, (-spX * 3 - clX * 2) - 80, edY), text="The quick brown jumps over the lazy dog.", callback=self.textChanged_)
 			self.w.edit.getNSTextField().setNeedsLayout_(True)
-			defaultWhite = NSColor.colorWithCalibratedRed_green_blue_alpha_(1,1,1,1)
-			defaultBlack = NSColor.colorWithCalibratedRed_green_blue_alpha_(0,0,0,1)
-			self.w.foreColour = ColorWell((-spX*2-clX*2, spY, clX, edY), color=defaultBlack, callback=self.uiChange_)
-			self.w.backColour = ColorWell((-spX-clX, spY, clX, edY), color=defaultWhite, callback=self.uiChange_)
-			self.w.refresh = Button((-spX-138, spY, 80, edY), "Refresh", callback=self.textChanged_)
-			self.w.instancePopup = PopUpButton((spX, spY*2+edY, -spX, edY), insList, callback=self.changeInstance_)
-			self.w.preview = TheView((0, spX*3+edY*2, -0, -0))
+			defaultWhite = NSColor.colorWithCalibratedRed_green_blue_alpha_(1, 1, 1, 1)
+			defaultBlack = NSColor.colorWithCalibratedRed_green_blue_alpha_(0, 0, 0, 1)
+			self.w.foreColour = ColorWell((-spX * 2 - clX * 2, spY, clX, edY), color=defaultBlack, callback=self.uiChange_)
+			self.w.backColour = ColorWell((-spX - clX, spY, clX, edY), color=defaultWhite, callback=self.uiChange_)
+			self.w.refresh = Button((-spX - 138, spY, 80, edY), "Refresh", callback=self.textChanged_)
+			self.w.instancePopup = PopUpButton((spX, spY * 2 + edY, -spX, edY), insList, callback=self.changeInstance_)
+			self.w.preview = TheView((0, spX * 3 + edY * 2, -0, -0))
 			self.w.preview._foreColour = defaultBlack
 			self.w.preview._backColour = defaultWhite
 			self.w.preview.instances = {}
@@ -229,22 +234,22 @@ class WaterfallWindow(GeneralPlugin):
 					if i < skip:
 						continue
 					if surrogate_start.match(c):
-						codepoint = surrogate_pairs.findall(c+newList[i+1])[0]
+						codepoint = surrogate_pairs.findall(c + newList[i + 1])[0]
 						# skip over emoji skin tone modifiers
 						if codepoint in [u'🏻', u'🏼', u'🏽', u'🏾', u'🏿']:
 							continue
 						filtered.append(codepoint)
-					elif surrogate_start.match(newList[i-1]):
+					elif surrogate_start.match(newList[i - 1]):
 						continue
 					elif emoji_variation_selector.match(newList[i]):
 						continue
 					else:
 						if c == "/":
-							if i+1 > len(newList)-1:
+							if i + 1 > len(newList) - 1:
 								filtered.append(c)
 								continue
 							j = i
-							longest = ''.join(newList[i+1:])
+							longest = ''.join(newList[i + 1:])
 							while True:
 								if Glyphs.font.glyphs[longest]:
 									filtered.append(longest)
