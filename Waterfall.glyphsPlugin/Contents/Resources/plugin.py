@@ -314,7 +314,10 @@ class WaterfallWindow(GeneralPlugin):
 
 	@objc.python_method
 	def start(self):
-		newMenuItem = NSMenuItem(self.name, self.showWindow_)
+		newMenuItem = NSMenuItem.new()
+		newMenuItem.setTitle_(self.name)
+		newMenuItem.setAction_(self.showWindow_)
+		newMenuItem.setTarget_(self)
 		Glyphs.menu[WINDOW_MENU].append(newMenuItem)
 
 	def setWindowController_(self, windowController):
