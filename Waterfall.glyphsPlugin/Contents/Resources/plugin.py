@@ -15,10 +15,10 @@
 #https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/CocoaViewsGuide/SubclassingNSView/SubclassingNSView.html
 
 from __future__ import print_function, unicode_literals
-from GlyphsApp import Glyphs, UPDATEINTERFACE, DOCUMENTACTIVATED, LTR, WINDOW_MENU
+from GlyphsApp import Glyphs, UPDATEINTERFACE, DOCUMENTACTIVATED, GSLTR, WINDOW_MENU
 from GlyphsApp.plugins import GeneralPlugin
 from vanilla import VanillaBaseObject, FloatingWindow, EditText, ColorWell, Button, PopUpButton
-from AppKit import NSMenuItem, NSAffineTransform, NSView, NSColor, NSBezierPath, NSAttributedString, NSFont, NSMutableParagraphStyle, NSParagraphStyleAttributeName, NSForegroundColorAttributeName, NSFontAttributeName
+from Cocoa import NSMenuItem, NSAffineTransform, NSView, NSColor, NSBezierPath, NSAttributedString, NSFont, NSMutableParagraphStyle, NSParagraphStyleAttributeName, NSForegroundColorAttributeName, NSFontAttributeName
 from Foundation import NSHeight
 import traceback
 import re
@@ -29,11 +29,13 @@ surrogate_pairs = re.compile(u'[\ud800-\udbff][\udc00-\udfff]', re.UNICODE)
 surrogate_start = re.compile(u'[\ud800-\udbff]', re.UNICODE)
 emoji_variation_selector = re.compile(u'[\ufe00-\ufe0f]', re.UNICODE)
 
+
 def getKernValue(layer1, layer2):
 	if Glyphs.buildNumber > 3000:
-		return layer1.nextKerningForLayer_direction_(layer2, LTR)
+		return layer1.nextKerningForLayer_direction_(layer2, GSLTR)
 	else:
 		return layer1.rightKerningForLayer_(layer2)
+
 
 class WaterfallView(NSView):
 	wrapper: Any
